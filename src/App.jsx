@@ -907,6 +907,7 @@ function AuthScreen({ onComplete }) {
 // ============================================================
 
 function OnboardingScreen({ onComplete }) {
+  const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [heritage, setHeritage] = useState("");
@@ -1240,14 +1241,16 @@ function OnboardingScreen({ onComplete }) {
         {selectedTags.length}/6 selected
       </div>
       <Button
-        onClick={() =>
-          selectedTags.length >= 1 &&
-          onComplete({ name, heritage, area, tags: selectedTags })
-        }
+        onClick={async () => {
+          if (selectedTags.length === 0 || submitting) return;
+          setSubmitting(true);
+          await onComplete({ name, heritage, area, tags: selectedTags });
+          setSubmitting(false);
+        }}
         full
-        disabled={selectedTags.length === 0}
+        disabled={selectedTags.length === 0 || submitting}
       >
-        Find My Community 🚀
+        {submitting ? "Setting things up..." : "Find My Community 🚀"}
       </Button>
     </div>,
   ];
@@ -3564,7 +3567,12 @@ export default function App() {
       tags: userData.tags,
       bio: `${userData.heritage} · ${userData.area}`,
     });
-    if (!error) setAppState("app");
+
+    if (!error) {
+      setAppState("app"); // ✅ THIS WAS MISSING OR NEVER REACHED
+    } else {
+      console.error("Profile creation failed", error);
+    }
   };
 
   const handleJoinCommunity = async (communityId) => {
